@@ -1,27 +1,19 @@
 import fastify from 'fastify';
 import cors from '@fastify/cors';
 import { connectDB } from './db/connect';
+import { taskRoutes } from './routes/TaskRouter'; // ייבוא הראוטים
+
 const server = fastify({ logger: true });
 
-// רישום CORS (מאפשר ללקוח לדבר עם השרת)
-server.register(cors, {
-  origin: '*', // בהמשך נשנה את זה לדומיין של הלקוח בלבד
-});
+server.register(cors, { origin: '*' });
 
-// מסלול בדיקה בסיסי
-server.get('/health', async (request, reply) => {
-  return { status: 'ok' };
-});
+
+// כאן אנחנו רושמים את הראוטים שלנו
+server.register(taskRoutes);
 
 const start = async () => {
-  try {
-    await connectDB(); 
-    await server.listen({ port: 3000 });
-    console.log('Server is running on http://localhost:3000');
-  } catch (err) {
-    server.log.error(err);
-    process.exit(1);
-  }
+  await connectDB();
+  await server.listen({ port: 3000 });
 };
 
 start();
