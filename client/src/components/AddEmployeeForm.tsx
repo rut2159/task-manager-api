@@ -1,15 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { addEmployee } from '../services/adminService';
-import type { RegisterData } from '../types';
+import { addEmployee, getAllEmployees } from '../services/adminService';
+import type { CreateEmployeeData, User } from '../types';
 
 const employeeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Please provide a valid email'),
-  role: z.enum(['developer', 'manager', 'admin']),
-});
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  role: z.enum(['teamLead', 'developer']),
+  teamLeadId: z.string().optional(),
+}).refine(
+  (data) => {
+    // If role is developer, teamLeadId must be provided
+    if (data.role === 'developer' && !data.teamLeadId) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: 'Team Lead is required for developers',
+    path: ['teamLeadId'],
+  }
+);
 
 type EmployeeFormData = z.infer<typeof employeeSchema>;
 
@@ -17,10 +31,36 @@ const AddEmployeeForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [teamLeads, setTeamLeads] = useState<User[]>([]);
+  const [selectedRole, setSelectedRole] = useState<'teamLead' | 'developer'>('developer');
 
-  const { register, handleSubmit, formState: { errors } } = useForm<EmployeeFormData>({
+  const { register, handleSubmit, formState: { errors }, watch, reset } = useForm<EmployeeFormData>({
     resolver: zodResolver(employeeSchema),
+    defaultValues: {
+      role: 'developer',
+    },
   });
+
+  const role = watch('role');
+
+  useEffect(() => {
+    setSelectedRole(role as 'teamLead' | 'developer');
+  }, [role]);
+
+  useEffect(() => {
+    // Fetch team leads for the dropdown
+    const fetchTeamLeads = async () => {
+      try {
+        const employees = await getAllEmployees();
+        const leads = employees.filter(emp => emp.role === 'teamLead');
+        setTeamLeads(leads);
+      } catch (error) {
+        console.error('Failed to fetch team leads:', error);
+      }
+    };
+
+    fetchTeamLeads();
+  }, []);
 
   const onSubmit = async (data: EmployeeFormData) => {
     setIsLoading(true);
@@ -28,8 +68,17 @@ const AddEmployeeForm = () => {
     setSuccessMessage(null);
 
     try {
-      const response = await addEmployee(data as RegisterData);
+      const employeeData: CreateEmployeeData = {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        role: data.role,
+        ...(data.role === 'developer' && { teamLeadId: data.teamLeadId }),
+      };
+
+      const response = await addEmployee(employeeData);
       setSuccessMessage(`Employee ${response.name} created successfully.`);
+      reset({ role: 'developer' });
     } catch (error: any) {
       setServerError(error.response?.data?.error || 'Failed to add employee.');
     } finally {
@@ -78,11 +127,38 @@ const AddEmployeeForm = () => {
             className="w-full rounded-lg bg-slate-800 border border-slate-700 px-4 py-2.5 text-white focus:border-indigo-500 focus:outline-none"
           >
             <option value="developer">Developer</option>
-            <option value="manager">Manager</option>
-            <option value="admin">Admin</option>
+            <option value="teamLead">Team Lead</option>
           </select>
           {errors.role && <p className="mt-1 text-xs text-red-400">{errors.role.message}</p>}
         </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+          <input
+            type="password"
+            {...register('password')}
+            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-4 py-2.5 text-white focus:border-indigo-500 focus:outline-none"
+          />
+          {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}
+        </div>
+
+        {selectedRole === 'developer' && (
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Assign to Team Lead</label>
+            <select
+              {...register('teamLeadId')}
+              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-4 py-2.5 text-white focus:border-indigo-500 focus:outline-none"
+            >
+              <option value="">Select a Team Lead...</option>
+              {teamLeads.map((lead) => (
+                <option key={lead._id} value={lead._id}>
+                  {lead.name}
+                </option>
+              ))}
+            </select>
+            {errors.teamLeadId && <p className="mt-1 text-xs text-red-400">{errors.teamLeadId.message}</p>}
+          </div>
+        )}
 
         <button
           type="submit"

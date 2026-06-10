@@ -120,7 +120,9 @@ export const getMe = async (req: FastifyRequest, reply: FastifyReply) => {
       return reply.code(401).send({ error: 'Access denied. No authenticated user.' });
     }
 
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user.id)
+      .select('-password')
+      .populate('teamLeadId', 'name email role');
     if (!user) {
       return reply.code(404).send({ error: 'User not found.' });
     }
@@ -130,6 +132,7 @@ export const getMe = async (req: FastifyRequest, reply: FastifyReply) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      teamLeadId: user.teamLeadId,
     });
   } catch (error) {
     console.error('💥 [userController.ts] Catch block - Server error during getMe:', error);

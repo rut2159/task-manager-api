@@ -2,17 +2,22 @@ export interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'developer';
+  role: 'manager' | 'teamLead' | 'developer';
+  teamLeadId?: string | User;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Task {
   _id: string;
   title: string;
   description: string;
-  status: 'Pending' | 'In Progress' | 'Deployed';
-  completed: boolean;
-  assignedTo?: User;
+  status: 'pending' | 'in-progress' | 'completed';
+  assignedTo: string | User;
+  assignedBy: string | User;
+  createdBy: string | User;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface LoginCredentials {
@@ -24,10 +29,26 @@ export interface RegisterData {
   name: string;
   email: string;
   password: string;
-  role?: 'admin' | 'manager' | 'developer';
+  role?: 'manager' | 'teamLead' | 'developer';
 }
 
 export interface AuthResponse {
   token: string;
   user: User;
+  message?: string;
+}
+
+export interface CreateEmployeeData {
+  name: string;
+  email: string;
+  password: string;
+  role: 'teamLead' | 'developer';
+  teamLeadId?: string; // Required for developers
+}
+
+export interface UpdateEmployeeData {
+  name?: string;
+  email?: string;
+  role?: 'teamLead' | 'developer';
+  teamLeadId?: string;
 }

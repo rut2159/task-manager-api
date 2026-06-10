@@ -4,7 +4,8 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password?: string;
-  role?: 'developer' | 'manager' | 'admin';
+  role?: 'manager' | 'teamLead' | 'developer';
+  teamLeadId?: mongoose.Types.ObjectId; // Required for developers, points to their Team Lead
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -16,8 +17,14 @@ const userSchema: Schema = new Schema(
     password: { type: String, required: true },
     role: {
       type: String,
-      enum: ['developer', 'manager', 'admin'],
+      enum: ['manager', 'teamLead', 'developer'],
       default: 'developer',
+    },
+    teamLeadId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: false, // Only required for developers
+      default: null,
     },
   },
   { timestamps: true }

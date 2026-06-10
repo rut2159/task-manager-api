@@ -5,7 +5,7 @@ interface Employee {
   _id: string;
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'developer';
+  role: 'manager' | 'teamLead' | 'developer';
 }
 
 interface EmployeeListProps {
@@ -22,8 +22,8 @@ const EmployeeList = ({ employees = [] }: EmployeeListProps) => {
   const displayEmployees = employees.length > 0 ? employees : mockEmployees;
 
   const roleColors = {
-    admin: 'bg-purple-500/10 text-purple-300 border-purple-500/20',
     manager: 'bg-blue-500/10 text-blue-300 border-blue-500/20',
+    teamLead: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20',
     developer: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
   };
 

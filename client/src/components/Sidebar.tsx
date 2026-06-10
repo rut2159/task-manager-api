@@ -38,7 +38,8 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
     { label: 'Profile', to: '/profile', icon: User },
   ];
 
-  const links = user?.role === 'admin' || user?.role === 'manager' ? adminLinks : developerLinks;
+  // Managers and Team Leads see management links; developers see their limited view
+  const links = user?.role === 'manager' || user?.role === 'teamLead' ? adminLinks : developerLinks;
 
   return (
     <aside
@@ -65,25 +66,26 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
         </button>
       </div>
 
-      <nav className="mt-4 px-2">
-        {links.map((link) => {
-          const Icon = link.icon;
-          return (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              className={({ isActive }) =>
-                `group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                  isActive ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                }`
-              }
-            >
-              <Icon className="h-5 w-5" />
-              {isOpen && <span>{link.label}</span>}
-            </NavLink>
-          );
-        })}
-      </nav>
+     <nav className="mt-4 px-2">
+  {links.map((link) => {
+    const Icon = link.icon;
+    return (
+      <NavLink
+        // שינוי כאן: הוספנו את ה-label לתוך ה-key כדי להבטיח ייחודיות
+        key={`${link.to}-${link.label}`} 
+        to={link.to}
+        className={({ isActive }) =>
+          `group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
+            isActive ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+          }`
+        }
+      >
+        <Icon className="h-5 w-5" />
+        {isOpen && <span>{link.label}</span>}
+      </NavLink>
+    );
+  })}
+</nav>
 
       <div className="absolute inset-x-0 bottom-0 border-t border-slate-800 p-4">
         <div className="flex items-center gap-3">

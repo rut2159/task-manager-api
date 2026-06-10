@@ -4,27 +4,39 @@ import { authenticateJWT, authorizeRoles } from '../middlewares/authMiddleware';
 
 export async function taskRoutes(server: FastifyInstance) {
   
-  // שליפת כל המשימות (מוגן - דורש רק התחברות)
-  server.get('/tasks', { preHandler: [authenticateJWT] }, taskController.getAllTasks);
+  // שליפת כל המשימות (מוגן - דורש התחברות בלבד)
+  // מנהל רואה הכל, Team Lead רואה משימות של הפיתחוים שלהם, Developer רואה רק שלו
+  server.get(
+    '/', 
+    { preHandler: [authenticateJWT] }, 
+    taskController.getAllTasks
+  );
 
-  // יצירת משימה (מוגן - רק למנהלים/אדמינים)
+  // שליפת משימה ספציפית לפי ID
+  server.get(
+    '/:id', 
+    { preHandler: [authenticateJWT] }, 
+    taskController.getTaskById
+  );
+
+  // יצירת משימה (מוגן - רק למנהלים ו-Team Leads)
   server.post(
-    '/tasks', 
-    { preHandler: [authenticateJWT, authorizeRoles('manager', 'admin')] }, 
+    '/', 
+    { preHandler: [authenticateJWT, authorizeRoles('manager', 'teamLead')] }, 
     taskController.createTask
   );
 
-  // עדכון משימה לפי מזהה (מוגן - דורש התחברות)
+  // עדכון סטטוס משימה לפי מזהה (מוגן - Manager, Team Lead, Developer בהתאם להרשאות)
   server.put(
-    '/tasks/:id', 
+    '/:id', 
     { preHandler: [authenticateJWT] }, 
-    taskController.updateTask
+    taskController.updateTaskStatus
   );
 
-  // מחיקת משימה לפי מזהה (מוגן - רק אדמין יכול למחוק!)
+  // מחיקת משימה לפי מזהה (מוגן - רק Manager יכול למחוק!)
   server.delete(
-    '/tasks/:id', 
-    { preHandler: [authenticateJWT, authorizeRoles('admin')] }, 
+    '/:id', 
+    { preHandler: [authenticateJWT, authorizeRoles('manager')] }, 
     taskController.deleteTask
   );
 }
